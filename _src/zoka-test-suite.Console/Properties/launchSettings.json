@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "zoka-test-suite.Console": {
+      "commandName": "Project",
+      "commandLineArgs": "suite -f x.x -c x.y"
+    }
+  }
+}
