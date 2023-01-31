@@ -17,8 +17,10 @@ namespace Zoka.TestSuite
 
 		private static Task<int>							RunSuite(FileInfo _suite_file, FileInfo _config_file, FileInfo _log4net_config_file)
 		{
-			ConfigureServiceProvider(_config_file, _log4net_config_file);
-			return Task<int>.FromResult(0);
+			var service_provider = ConfigureServiceProvider(_config_file, _log4net_config_file);
+			var test_suite = Abstraction.TestSuite.FromXml(_suite_file, service_provider);
+			var res = test_suite.Run(service_provider);
+			return Task<int>.FromResult(res);
 		}
 
 		private static Task<int>							RunPlaylist(FileInfo _playlist_file, FileInfo _config_file, FileInfo _log4net_config_file)
