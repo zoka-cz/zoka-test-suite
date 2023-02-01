@@ -22,7 +22,7 @@ Each test is composed from one or many *Test actions*. This *Test action* is sma
 #### XML Syntax
 The *Test playlist* is structured like this:
 ```xml
-<TestsPlaylist name="playlist_name">
+<TestsPlaylist _name="playlist_name">
 	<SomePlaylistAction some_action_param="some_param_value"  other_action_param="$value_from_context" />
 	<OtherPlaylistAction _include="/path/to/action/definition.xml"/>
 </TestsPlaylist>
@@ -31,4 +31,7 @@ Example above shows some of the feature the **Zoka Test Suite** offers:
 - Test context - each test is run with some context (*DataStorage*), which may be used to transfer information between actions, tests and playlists.
 - It is not necessary to write whole tests definition into single file. Possibility to *_include* definition of actions from other file gives you the possibility to structure you test project as it grows big.
 ### Test suite
-TBD
+Test suite is collection of *Test playlists*, which are run in the given sequence. For more clarity, you may express the meaning of the *Test suite* by natural language like:
+- Test, whether the application can create customer record
+- Test, whether the application can delete customer record
+- Test, whether the order for customer may be created
