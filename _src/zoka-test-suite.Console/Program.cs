@@ -15,7 +15,7 @@ namespace Zoka.TestSuite
 			return root_command.InvokeAsync(args).Result;
 		}
 
-		private static Task<int>							RunSuite(FileInfo _suite_file, FileInfo _config_file, FileInfo _log4net_config_file)
+		private static Task<int>							RunSuite(FileInfo _suite_file, FileInfo? _config_file, FileInfo _log4net_config_file)
 		{
 			var service_provider = ConfigureServiceProvider(_config_file, _log4net_config_file);
 			var test_suite = Abstraction.TestSuite.FromXml(_suite_file, service_provider);
@@ -23,14 +23,14 @@ namespace Zoka.TestSuite
 			return Task<int>.FromResult(res);
 		}
 
-		private static Task<int>							RunPlaylist(FileInfo _playlist_file, FileInfo _config_file, FileInfo _log4net_config_file)
+		private static Task<int>							RunPlaylist(FileInfo _playlist_file, FileInfo? _config_file, FileInfo _log4net_config_file)
 		{
 			ConfigureServiceProvider(_config_file, _log4net_config_file);
 			return Task<int>.FromResult(0);
 		}
 
 
-		private static IServiceProvider						ConfigureServiceProvider(FileInfo _config_file, FileInfo _log4net_config_file)
+		private static IServiceProvider						ConfigureServiceProvider(FileInfo? _config_file, FileInfo _log4net_config_file)
 		{
 			var service_collection = new ServiceCollection();
 			CollectServices(service_collection, _config_file, _log4net_config_file);
@@ -42,13 +42,14 @@ namespace Zoka.TestSuite
 		}
 
 		// will collect services into passed IServiceCollection
-		static void											CollectServices(IServiceCollection _services, FileInfo _config_file, FileInfo _log4net_config_file)
+		static void											CollectServices(IServiceCollection _services, FileInfo? _config_file, FileInfo _log4net_config_file)
 		{
 			_services.AddSingleton<IConfiguration>(BuildConfiguration(_config_file));
 			if (!_log4net_config_file.Exists)
 				throw new FileNotFoundException($"Log4Net configuration file {_log4net_config_file.Name} not found");
 			_services.AddLogging((log_builder) =>
 			{
+				System.Text.Encoding.RegisterProvider(System.Text.CodePagesEncodingProvider.Instance);
 				log_builder.SetMinimumLevel(LogLevel.Trace);
 				log_builder.AddLog4Net(_log4net_config_file.FullName);
 			});
@@ -61,11 +62,18 @@ namespace Zoka.TestSuite
 		}
 
 		// Builds the IConfiguration for this app used inside the app
-		private static IConfiguration						BuildConfiguration(FileInfo _config_file)
+		private static IConfiguration						BuildConfiguration(FileInfo? _config_file)
 		{
 			// build configuration
 			var config_builder = new ConfigurationBuilder();
-			if (_config_file.Exists)
+
+			if (_config_file == null)
+			{
+				var config_file = new FileInfo("appsettings.json");
+				if (config_file.Exists)
+					config_builder.AddJsonFile(config_file.FullName);
+			} 
+			else if (_config_file.Exists)
 				config_builder.AddJsonFile(_config_file.FullName);
 			else
 			{
@@ -82,10 +90,9 @@ namespace Zoka.TestSuite
 			var root_command = new RootCommand("Will perform integration testing of your application.");
 
 			// common options
-			var config_file_option = new Option<FileInfo>(
+			var config_file_option = new Option<FileInfo?>(
 				name: "--config",
-				description: "Configuration file for providers used when running tests",
-				getDefaultValue: () => new FileInfo("appsettings.json")
+				description: "Configuration file for providers used when running tests (if not specified, app tries to load appsettings.json, if exists)"
 			);
 			config_file_option.AddAlias("-c");
 			var log4net_file_option = new Option<FileInfo>(

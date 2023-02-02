@@ -2,7 +2,7 @@
   "profiles": {
     "zoka-test-suite.Console": {
       "commandName": "Project",
-      "commandLineArgs": "suite -f x.x -c x.y"
+      "commandLineArgs": "suite -f \"d:\\Projects\\L2F\\l2f-build\\ZokaTestSuite\\l2f-server.TestSuite.xml\""
     }
   }
 }
