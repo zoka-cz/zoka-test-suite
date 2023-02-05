@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
@@ -12,22 +14,50 @@ namespace Zoka.TestSuite.Abstraction
 	{
 		private readonly Dictionary<string, CreateFromXmlElementDelegate> m_Workers = new Dictionary<string, CreateFromXmlElementDelegate>();
 
-		public IPlaylistAction								LoadFromXmlFile(FileInfo _action_file, IServiceProvider _service_provider)
+		/// <summary>Will register the playlist action</summary>
+		public void											RegisterPlaylistAction(string _name, CreateFromXmlElementDelegate _action)
 		{
+			if (m_Workers.ContainsKey(_name))
+				throw new ArgumentException($"TestPlaylist action with name \"{_name}\" is already registered.", nameof(_name));
 
+			m_Workers.Add(_name, _action);
 		}
 
-		/// <summary>Will load the TestPlaylist action factory from the element</summary>
+		/// <summary>Will load the IPlaylistAction from the XML file</summary>
+		public IPlaylistAction								LoadFromXmlFile(FileInfo _action_file, IServiceProvider _service_provider)
+		{
+			var logger = _service_provider.GetService<ILogger<TestPlaylistActionFactory>>();
+			logger?.LogTrace($"Loading test playlist action from {_action_file}.");
+
+			XDocument x_action;
+			using (var reader = new StreamReader(_action_file.OpenRead()))
+				x_action = XDocument.Load(reader, LoadOptions.SetLineInfo);
+
+			// now we can parse the element
+			return LoadFromXmlElement(_action_file, x_action.Root, _service_provider);
+		}
+
+		/// <summary>Will load the TestPlaylist action factory from the XML element</summary>
 		public IPlaylistAction								LoadFromXmlElement(FileInfo _src_file, XElement _element, IServiceProvider _service_provider)
 		{
+			var logger = _service_provider.GetService<ILogger<TestPlaylistActionFactory>>();
+			logger?.LogTrace($"Loading test playlist action from element {_element.Name}.");
+			
 			if (!m_Workers.ContainsKey(_element.Name.LocalName))
 				throw new Exception($"Trying to load {_element.Name} element into IPlaylistAction, but no IPlaylistAction could be found. Didn't you forget to load appropriate plugin?");
 
-			var included_path = _element.ReadAttr<string>("_include", _src_file.Name, false);
+			var included_path = _element.ReadAttr<string>("_include", _src_file, false);
 			if (included_path != null)
 			{
-
+				logger?.LogTrace($"Playlist action included from {included_path} -> going to read the file.");
+				var included_file = new FileInfo(Path.Combine(_src_file.DirectoryName!, included_path));
+				if (!included_file.Exists)
+					throw new ZTSXmlException($"PlaylistAction file definition included ({included_file}) was not found.", _src_file.Name, _element.GetLineNumber(), _element.GetLinePosition());
+				return LoadFromXmlFile(included_file, _service_provider);
 			}
+
+			var playlist_action = m_Workers[_element.Name.LocalName](_src_file, _element, _service_provider);
+			return playlist_action;
 		}
 	}
 }

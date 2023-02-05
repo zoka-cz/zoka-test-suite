@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Text;
 using System.Xml;
 using System.Xml.Linq;
@@ -23,13 +24,13 @@ namespace Zoka.TestSuite.Abstraction.XMLHelpers
 		}
 
 		/// <summary></summary>
-		public static T										ReadAttr<T>(this XElement _element, string _attr_name, string _filename, bool _required)
+		public static T										ReadAttr<T>(this XElement _element, string _attr_name, FileInfo _src_file, bool _required)
 		{
 			var attr = _element.Attribute(_attr_name);
 			if (attr == null)
 			{
 				if (_required)
-					throw new ZTSXmlException($"Expected required attribute {_attr_name} on {_element.Name.LocalName} element", _filename, _element.GetLineNumber(), _element.GetLinePosition());
+					throw new ZTSXmlException($"Expected required attribute {_attr_name} on {_element.Name.LocalName} element", _src_file.Name, _element.GetLineNumber(), _element.GetLinePosition());
 				return default(T);
 			}
 			var tc = new TypeConverter();
@@ -38,17 +39,16 @@ namespace Zoka.TestSuite.Abstraction.XMLHelpers
 		}
 
 		/// <summary>Will read and returns the name attribute from XElement (_name)</summary>
-		public static string								ReadNameAttr(this XElement _element, string _filename, bool _required)
-		{
-			var name_attr = _element.Attribute("_name");
-			if (name_attr != null)
-			{
-				return name_attr.Value;
-			}
-			if (_required)
-				throw new ZTSXmlException($"Expected _name attribute on {_element.Name.LocalName} element", _filename, _element.GetLineNumber(), _element.GetLinePosition());
+		public static string								ReadNameAttr(this XElement _element, FileInfo _src_file, bool _required) 
+			=> _element.ReadAttr<string>("_name", _src_file, _required);
 
-			return null;
-		}
+		/// <summary>Will read the description attribute from XElement (_description)</summary>
+		public static string								ReadDescAttr(this XElement _element, FileInfo _src_file, bool _required)
+			=> _element.ReadAttr<string>("_description", _src_file, _required);
+
+		/// <summary>Will read the Id attribute from XElement (_id)</summary>
+		public static string ReadIdAttr(this XElement _element, FileInfo _src_file, bool _required)
+			=> _element.ReadAttr<string>("_id", _src_file, _required);
+
 	}
 }

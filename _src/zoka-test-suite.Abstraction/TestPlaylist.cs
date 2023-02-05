@@ -62,7 +62,7 @@ namespace Zoka.TestSuite.Abstraction
 				throw new XmlException($"Invalid element name. Must be {XEL_NAME}, but it is {_element.Name}", null, _element.GetLineNumber(), _element.GetLinePosition());
 
 			// is it included?
-			var included_path = _element.ReadAttr<string>("_include", _src_xml.Name, false);
+			var included_path = _element.ReadAttr<string>("_include", _src_xml, false);
 			if (included_path != null)
 			{
 				logger?.LogTrace($"Playlist included from {included_path} -> going to read the file.");
@@ -74,8 +74,8 @@ namespace Zoka.TestSuite.Abstraction
 
 			var playlist = new TestPlaylist();
 
-			playlist.Name = _element.ReadNameAttr(_src_xml.Name, true);
-			playlist.Description = _element.ReadAttr<string>("_desc", _src_xml.Name, false);
+			playlist.Name = _element.ReadNameAttr(_src_xml, true);
+			playlist.Description = _element.ReadAttr<string>("_desc", _src_xml, false);
 
 			var action_factory = _service_provider.GetRequiredService<TestPlaylistActionFactory>();
 			foreach (var x_element in _element.Elements())

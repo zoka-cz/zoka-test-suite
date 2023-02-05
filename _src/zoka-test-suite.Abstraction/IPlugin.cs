@@ -1,16 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using Zoka.TestSuite.Abstraction;
+﻿using System.Collections.Generic;
 
-namespace zoka_test_suite.Abstraction
+namespace Zoka.TestSuite.Abstraction
 {
 	/// <summary>The interface, which defines any plugin into the Zoka.TestSuite</summary>
-	public interface IPlugin
+	public interface IZokaTestSuitePlugin
 	{
 		/// <summary>Returns the service collecting callbacks to be called during service collection. Null must not be returned, empty collection is allowed</summary>
-		IEnumerable<CollectServicesDelegate> CollectServicesCallback { get; }
+		IEnumerable<CollectServicesDelegate>				CollectServicesCallback { get; }
 
 		/// <summary>Returns the service configuration callbacks to be called during service configuration. Null must not be returned, empty collection is allowed</summary>
-		IEnumerable<ConfigureServicesDelegate> ConfigureServicesCallback { get; }
+		IEnumerable<ConfigureServicesDelegate>				ConfigureServicesCallback { get; }
 	}
 }
