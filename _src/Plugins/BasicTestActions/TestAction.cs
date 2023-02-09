@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Zoka.TestSuite.Abstraction;
 using Zoka.TestSuite.Abstraction.XMLHelpers;
+using Zoka.ZScript;
 
 namespace Zoka.TestSuite.BasicTestActions
 {
@@ -14,7 +15,7 @@ namespace Zoka.TestSuite.BasicTestActions
 	{
 		/// <summary>XML element name</summary>
 		public const string									ACTION_TYPE_NAME = "Test";
-
+		
 		private List<IPlaylistAction>						ArrangeActions { get; } = new List<IPlaylistAction>();
 		private List<IPlaylistAction>						ActActions { get; } = new List<IPlaylistAction>();
 		private List<IPlaylistAction>						AssertActions { get; } = new List<IPlaylistAction>();
@@ -23,7 +24,7 @@ namespace Zoka.TestSuite.BasicTestActions
 		/// <summary>Name of the action</summary>
 		public string										Name { get; }
 		/// <summary>Id of the action</summary>
-		public string										Id { get; private set; }
+		public string										Id { get; }
 		/// <summary>Description of the action</summary>
 		public string										Description { get; }
 
@@ -130,6 +131,7 @@ namespace Zoka.TestSuite.BasicTestActions
 			var name = _x_element.ReadNameAttr(_src_file, true);
 			var desc = _x_element.ReadDescAttr(_src_file, false);
 			var id = _x_element.ReadIdAttr(_src_file, false);
+			
 
 			var test = new TestAction(id, name, desc);
 
@@ -138,14 +140,14 @@ namespace Zoka.TestSuite.BasicTestActions
 			ParseActions(_x_element.Element("Act"), test.ActActions, _service_provider, _src_file);
 			ParseActions(_x_element.Element("Assert"), test.AssertActions, _service_provider, _src_file);
 
-			//var export_el = _x_element.Element("Export");
-			//if (export_el != null)
-			//{
-			//	foreach (var export_item in export_el.Elements("Item"))
-			//	{
-			//		test.Exports.Add(export_item.Value.Trim());
-			//	}
-			//}
+			var export_el = _x_element.Element("Export");
+			if (export_el != null)
+			{
+				foreach (var export_item in export_el.Elements("Item"))
+				{
+					test.Exports.Add(export_item.Value.Trim());
+				}
+			}
 
 			return test;
 		}

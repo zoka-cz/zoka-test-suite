@@ -64,6 +64,8 @@ namespace Zoka.TestSuite
 				log_builder.AddLog4Net(_log4net_config_file.FullName);
 			});
 			// testing
+			_services.AddTransient<Abstraction.TestSuite>();
+			_services.AddTransient<TestPlaylist>();
 			_services.AddSingleton<TestPlaylistActionFactory>();
 
 			// plugins

@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Zoka.TestSuite.Abstraction;
 using Zoka.TestSuite.Abstraction.XMLHelpers;
+using Zoka.ZScript;
 
 namespace Zoka.TestSuite.HttpTestActions
 {
@@ -47,48 +48,48 @@ namespace Zoka.TestSuite.HttpTestActions
 		/// <summary>Will perform action</summary>
 		public int											PerformAction(DataStorages _data_storages, IServiceProvider _service_provider)
 		{
-			//var logger = _service_provider.GetService<ILogger<HttpRequestTestAction>>();
+			var logger = _service_provider.GetService<ILogger<HttpRequestTestAction>>();
 
-			//HttpClient client = new HttpClient();
-			//if (ServerBaseUrl != null)
-			//{
-			//	var server_base_url = ScriptExpressionParser.ParseScriptExpression(ServerBaseUrl).EvaluateExpressionToValue(_data_storages, _service_provider) as string;
-			//	client.BaseAddress = new Uri(server_base_url ?? throw new InvalidOperationException($"Could not evaluate server parameter ({ServerBaseUrl})"));
-			//}
+			HttpClient client = new HttpClient();
+			if (ServerBaseUrl != null)
+			{
+				var server_base_url = ZScriptExpressionParser.ParseScriptExpression(ServerBaseUrl).EvaluateExpressionToValue(_data_storages, _service_provider) as string;
+				client.BaseAddress = new Uri(server_base_url ?? throw new InvalidOperationException($"Could not evaluate server parameter ({ServerBaseUrl})"));
+			}
 
-			//var url = ScriptExpressionParser.EvaluateScriptReplacements(Url, _data_storages, _service_provider);
-			//HttpRequestMessage request = new HttpRequestMessage(Method, url);
-			//logger.LogInformation($"Sending request: {Method.ToString().ToUpper()} {url}");
+			var url = ZScriptExpressionParser.EvaluateScriptReplacements(Url, _data_storages, _service_provider);
+			HttpRequestMessage request = new HttpRequestMessage(Method, url);
+			logger?.LogInformation($"Sending request: {Method.ToString().ToUpper()} {url}");
 
-			//if (BasicAuth != null)
-			//{
-			//	var basic_auth = ScriptExpressionParser.ParseScriptExpression(BasicAuth).EvaluateExpressionToValue(_data_storages, _service_provider) as string;
-			//	client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", basic_auth?.Base64Encode() ?? throw new InvalidOperationException($"Could not evaluate basic_auth parameter ({BasicAuth})"));
-			//	logger.LogInformation($"Authorizing as Basic {basic_auth}");
-			//}
+			if (BasicAuth != null)
+			{
+				var basic_auth = ZScriptExpressionParser.ParseScriptExpression(BasicAuth).EvaluateExpressionToValue(_data_storages, _service_provider) as string;
+				var auth_bytes = Encoding.UTF8.GetBytes(basic_auth);
+				client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(auth_bytes));
+				logger?.LogInformation($"Authorizing as Basic {basic_auth}");
+			}
 
-			//if (Content != null)
-			//{
-			//	var content = ScriptExpressionParser.EvaluateScriptReplacements(Content, _data_storages, _service_provider);
-			//	request.Content = new StringContent(content, Encoding.UTF8, "application/json");
-			//	logger.LogInformation($"Message content: {content}");
-			//}
+			if (Content != null)
+			{
+				var content = ZScriptExpressionParser.EvaluateScriptReplacements(Content, _data_storages, _service_provider);
+				request.Content = new StringContent(content, Encoding.UTF8, "application/json");
+				logger?.LogInformation($"Message content: {content}");
+			}
 
-			//var resp = client.Send(request);
-			//logger.LogInformation($"Response received: {resp.StatusCode:D} {resp.StatusCode:G}");
-			//var resp_content = resp.Content.ReadAsStringAsync().Result;
-			//if (!string.IsNullOrWhiteSpace(resp_content))
-			//	logger.LogInformation($"ResponseContent:{Environment.NewLine}{resp_content}");
+			var resp = client.SendAsync(request).Result;
+			logger?.LogInformation($"Response received: {resp.StatusCode:D} {resp.StatusCode:G}");
+			var resp_content = resp.Content.ReadAsStringAsync().Result;
+			if (!string.IsNullOrWhiteSpace(resp_content))
+				logger?.LogInformation($"ResponseContent:{Environment.NewLine}{resp_content}");
 
-			//if (!resp.IsSuccessStatusCode)
-			//{
-			//	throw new Exception($"Request to {request.RequestUri} has failed with HttpStatusCode: {resp.StatusCode:D} {resp.StatusCode:G}");
-			//}
+			if (!resp.IsSuccessStatusCode)
+			{
+				throw new Exception($"Request to {request.RequestUri} has failed with HttpStatusCode: {resp.StatusCode:D} {resp.StatusCode:G}");
+			}
 
-			//if (ContentInto != null)
-			//	_data_storages.Store(ContentInto, resp_content);
+			if (ContentInto != null)
+				_data_storages.Store(ContentInto, resp_content);
 
-			//return 0;
 			return 0;
 		}
 

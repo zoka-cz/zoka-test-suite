@@ -7,6 +7,7 @@ using System.Xml.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Zoka.TestSuite.Abstraction.XMLHelpers;
+using Zoka.ZScript;
 
 namespace Zoka.TestSuite.Abstraction
 {
@@ -14,6 +15,12 @@ namespace Zoka.TestSuite.Abstraction
 	/// <remarks>Test Playlist is collection of playlist actions considered as single test.</remarks>
 	public class TestPlaylist
 	{
+		#region Private data member
+		
+		private readonly ILogger<TestPlaylist>				m_Logger;
+
+		#endregion // Private data member
+
 		#region Public data members
 
 		/// <summary>Name of the XML Element with TestSuite</summary>
@@ -27,7 +34,37 @@ namespace Zoka.TestSuite.Abstraction
 		/// <summary>Playlist actions</summary>
 		public List<IPlaylistAction>						PlaylistActions { get; } = new List<IPlaylistAction>();
 
+		/// <summary>Returns the names of the playlist required to be run before this playlist can be run</summary>
+		public List<string>									RunAfterPlaylists { get; } = new List<string>();
+
 		#endregion // Public data members
+
+		#region Construction
+
+		/// <summary>Constructor</summary>
+		public TestPlaylist(ILogger<TestPlaylist> _logger)
+		{
+			m_Logger = _logger;
+		}
+
+		#endregion
+
+		#region Running
+
+		/// <summary>Will run the playlist action</summary>
+		public int											Run(DataStorages _data_storages, IServiceProvider _service_provider)
+		{
+			foreach (var playlist_action in PlaylistActions)
+			{
+				var res = playlist_action.PerformAction(_data_storages, _service_provider);
+				if (res != 0)
+					return res;
+			}
+
+			return 0;
+		}
+
+		#endregion // Running
 
 		#region XML Loading
 
@@ -72,10 +109,29 @@ namespace Zoka.TestSuite.Abstraction
 				return FromXmlFile(included_file, _service_provider);
 			}
 
-			var playlist = new TestPlaylist();
+			var playlist = _service_provider.GetRequiredService<TestPlaylist>();
 
 			playlist.Name = _element.ReadNameAttr(_src_xml, true);
 			playlist.Description = _element.ReadAttr<string>("_desc", _src_xml, false);
+
+			// run after playlists
+			var run_after_el = _element.Element("RunAfter");
+			if (run_after_el != null)
+			{
+				foreach (var playlist_el in run_after_el.Elements("Playlist"))
+				{
+					var name = playlist_el.ReadAttr<string>("name", _src_xml, false);
+					if (name != null)
+					{
+						name = playlist_el.Value.Trim();
+					}
+
+					if (string.IsNullOrWhiteSpace(name))
+						throw new ZTSXmlException($"RunAfter element requires Playlist elements list containing the name of the playlist to be run before this playlist. Name can be specified either as attribute name of Playlist element or as its content.", _src_xml.Name, playlist_el.GetLineNumber(), playlist_el.GetLinePosition());
+
+					playlist.RunAfterPlaylists.Add(name);
+				}
+			}
 
 			var action_factory = _service_provider.GetRequiredService<TestPlaylistActionFactory>();
 			foreach (var x_element in _element.Elements())
