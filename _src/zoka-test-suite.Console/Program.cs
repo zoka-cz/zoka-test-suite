@@ -128,20 +128,10 @@ namespace Zoka.TestSuite
 			}
 		}
 
-		static Assembly LoadPlugin(string relativePath)
+		static Assembly LoadPlugin(string _pathname)
 		{
-			// Navigate up to the solution root
-			string root = Path.GetFullPath(Path.Combine(
-				Path.GetDirectoryName(
-					Path.GetDirectoryName(
-						Path.GetDirectoryName(
-							Path.GetDirectoryName(
-								Path.GetDirectoryName(typeof(Program).Assembly.Location)!)!)!)!)!));
-
-			string pluginLocation = Path.GetFullPath(Path.Combine(root, relativePath.Replace('\\', Path.DirectorySeparatorChar)));
-			Console.WriteLine($"Loading commands from: {pluginLocation}");
-			PluginLoadContext loadContext = new PluginLoadContext(pluginLocation);
-			return loadContext.LoadFromAssemblyName(AssemblyName.GetAssemblyName(pluginLocation));
+			PluginLoadContext loadContext = new PluginLoadContext(_pathname);
+			return loadContext.LoadFromAssemblyName(AssemblyName.GetAssemblyName(_pathname));
 		}
 
 		static IEnumerable<IZokaTestSuitePlugin>							CreatePlugin(Assembly assembly)
