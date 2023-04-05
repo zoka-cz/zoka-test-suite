@@ -7,6 +7,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "zoka-test-suite.Console", "
 	ProjectSection(ProjectDependencies) = postProject
 		{07956A41-ED7F-4247-AA54-172B7499CD7C} = {07956A41-ED7F-4247-AA54-172B7499CD7C}
 		{29DCC959-DDFD-4828-A982-3B90C10FB9E8} = {29DCC959-DDFD-4828-A982-3B90C10FB9E8}
+		{53C13174-3F48-49B3-BF6F-44AA50C6BD47} = {53C13174-3F48-49B3-BF6F-44AA50C6BD47}
 		{71CA2379-159E-4F7F-9B0B-97E6126FA74C} = {71CA2379-159E-4F7F-9B0B-97E6126FA74C}
 	EndProjectSection
 EndProject
@@ -19,6 +20,8 @@ EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "zoka-test-suite.HttpTestActions", "Plugins\HttpTestActions\zoka-test-suite.HttpTestActions.csproj", "{29DCC959-DDFD-4828-A982-3B90C10FB9E8}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "zoka-test-suite.AssertionActions", "Plugins\AssertionActions\zoka-test-suite.AssertionActions.csproj", "{07956A41-ED7F-4247-AA54-172B7499CD7C}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "zoka-test-suite.DataStorageActions", "Plugins\DataStorageActions\zoka-test-suite.DataStorageActions.csproj", "{53C13174-3F48-49B3-BF6F-44AA50C6BD47}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -46,6 +49,10 @@ Global
 		{07956A41-ED7F-4247-AA54-172B7499CD7C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{07956A41-ED7F-4247-AA54-172B7499CD7C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{07956A41-ED7F-4247-AA54-172B7499CD7C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{53C13174-3F48-49B3-BF6F-44AA50C6BD47}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{53C13174-3F48-49B3-BF6F-44AA50C6BD47}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{53C13174-3F48-49B3-BF6F-44AA50C6BD47}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{53C13174-3F48-49B3-BF6F-44AA50C6BD47}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -54,6 +61,7 @@ Global
 		{71CA2379-159E-4F7F-9B0B-97E6126FA74C} = {3A4D96B2-CC91-4C55-A79F-C9A65F481264}
 		{29DCC959-DDFD-4828-A982-3B90C10FB9E8} = {3A4D96B2-CC91-4C55-A79F-C9A65F481264}
 		{07956A41-ED7F-4247-AA54-172B7499CD7C} = {3A4D96B2-CC91-4C55-A79F-C9A65F481264}
+		{53C13174-3F48-49B3-BF6F-44AA50C6BD47} = {3A4D96B2-CC91-4C55-A79F-C9A65F481264}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {50AA9E4D-4D8E-4E78-A12E-8F1EEE3BAA0A}
