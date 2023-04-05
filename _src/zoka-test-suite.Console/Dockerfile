@@ -26,6 +26,9 @@ RUN dotnet publish "zoka-test-suite.BasicTestActions.csproj" -c Release -o /app/
 # build HttpTestActions plugins
 WORKDIR "/src/Plugins/HttpTestActions"
 RUN dotnet publish "zoka-test-suite.HttpTestActions.csproj" -c Release -o /app/publish/Plugins /p:UseAppHost=false
+# build DataStorageActions plugins
+WORKDIR "/src/Plugins/DataStorageActions"
+RUN dotnet publish "zoka-test-suite.DataStorageActions.csproj" -c Release -o /app/publish/Plugins /p:UseAppHost=false
 
 FROM base AS final
 WORKDIR /app
