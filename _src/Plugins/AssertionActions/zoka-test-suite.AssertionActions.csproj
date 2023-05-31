@@ -7,6 +7,7 @@
 		<Nullable>enable</Nullable>
 		<AssemblyName>ZokaTestSuite.AssertionActions</AssemblyName>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
+		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
@@ -16,6 +17,11 @@
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
 		<TreatWarningsAsErrors>True</TreatWarningsAsErrors>
 	</PropertyGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="FluentAssertions.Json" Version="6.1.0" />
+	  <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<ProjectReference Include="..\..\zoka-test-suite.Abstraction\zoka-test-suite.Abstraction.csproj">

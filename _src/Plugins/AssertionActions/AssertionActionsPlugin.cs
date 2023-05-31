@@ -19,6 +19,7 @@ namespace Zoka.TestSuite.AssertionActions
 		{
 			var action_factory = _service_provider.GetRequiredService<TestPlaylistActionFactory>();
 			action_factory.RegisterPlaylistAction(AssertRegexMatchTestAction.ACTION_TYPE_NAME, AssertRegexMatchTestAction.ParseFromXmlElement);
+			action_factory.RegisterPlaylistAction(AssertJsonObjectTestAction.ACTION_TYPE_NAME, AssertJsonObjectTestAction.ParseFromXmlElement);
 
 			return _service_provider;
 		}

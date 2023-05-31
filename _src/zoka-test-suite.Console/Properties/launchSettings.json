@@ -2,7 +2,7 @@
   "profiles": {
     "zoka-test-suite.Console": {
       "commandName": "Project",
-      "commandLineArgs": "suite \r\n-f \"d:\\Projects\\L2F\\l2f-build\\ZokaTestSuite\\l2f-server.TestSuite.xml\" \r\n-c \"d:\\Projects\\L2F\\l2f-build\\ZokaTestSuite\\appsettings.json\"\r\n-pd \"d:\\Projects\\CSharp\\zoka-test-suite\\_src\\Plugins\\BasicTestActions\\bin\\Debug\\netstandard2.1\"\r\n\"d:\\Projects\\CSharp\\zoka-test-suite\\_src\\Plugins\\HttpTestActions\\bin\\Debug\\netstandard2.1\"\r\n\"d:\\Projects\\CSharp\\zoka-test-suite\\_src\\Plugins\\AssertionActions\\bin\\Debug\\netstandard2.1\"\r\n\"d:\\Projects\\CSharp\\zoka-test-suite\\_src\\Plugins\\DataStorageActions\\bin\\Debug\\netstandard2.1\""
+      "commandLineArgs": "suite \r\n-f \"d:\\Projects\\L2F\\l2f-build\\ZokaTestSuite\\l2f-server.TestSuite.xml\" \r\n-c \"d:\\Projects\\L2F\\l2f-build\\ZokaTestSuite\\appsettings-local.json\"\r\n-pd \"d:\\Projects\\CSharp\\zoka-test-suite\\_src\\Plugins\\BasicTestActions\\bin\\Debug\\netstandard2.1\"\r\n\"d:\\Projects\\CSharp\\zoka-test-suite\\_src\\Plugins\\HttpTestActions\\bin\\Debug\\netstandard2.1\"\r\n\"d:\\Projects\\CSharp\\zoka-test-suite\\_src\\Plugins\\AssertionActions\\bin\\Debug\\netstandard2.1\"\r\n\"d:\\Projects\\CSharp\\zoka-test-suite\\_src\\Plugins\\DataStorageActions\\bin\\Debug\\netstandard2.1\""
     }
   }
 }

@@ -6,6 +6,7 @@
 		<AssemblyName>ZokaTestSuite.DataStorageActions</AssemblyName>
 		<RootNamespace>Zoka.TestSuite.DataStorageActions</RootNamespace>
 		<GenerateDocumentationFile>True</GenerateDocumentationFile>
+		<CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
 	</PropertyGroup>
 
 	<PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
