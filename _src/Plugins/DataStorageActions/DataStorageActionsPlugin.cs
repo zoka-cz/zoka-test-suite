@@ -20,6 +20,8 @@ namespace Zoka.TestSuite.HttpTestActions
 		private IServiceProvider							ConfiguresServices(IServiceProvider _service_provider)
 		{
 			_service_provider.GetRequiredService<TestPlaylistActionFactory>().RegisterPlaylistAction(DataStorageFromJsonTestAction.ACTION_TYPE_NAME, DataStorageFromJsonTestAction.ParseFromXmlElement);
+			_service_provider.GetRequiredService<TestPlaylistActionFactory>().RegisterPlaylistAction(DataStorageFromZScriptTestAction.ACTION_TYPE_NAME, DataStorageFromZScriptTestAction.ParseFromXmlElement);
+			_service_provider.GetRequiredService<TestPlaylistActionFactory>().RegisterPlaylistAction(StoreRegexMatchesTestAction.ACTION_TYPE_NAME, StoreRegexMatchesTestAction.ParseFromXmlElement);
 			return _service_provider;
 		}
 

@@ -103,7 +103,7 @@ namespace Zoka.TestSuite.Abstraction
 		///		0, when all tests has been successful
 		///		non-zero value otherwise
 		/// </returns>
-		public virtual int									Run(IServiceProvider _service_provider)
+		public virtual EPlaylistActionResultInstruction		Run(IServiceProvider _service_provider)
 		{
 			m_Logger?.LogInformation($"Running test suite \"{Name}\"");
 			var data_storages = new DataStorages();
@@ -117,23 +117,26 @@ namespace Zoka.TestSuite.Abstraction
 					if (!section.Exists())
 						throw new Exception($"Required configuration {item_to_copy.Item1} was not found in any configuration. Didn't you forget to include configuration file, or define that configuration?");
 
-					data_storages.Store(item_to_copy.Item2, section.Value);
+					if (section.Value != null)
+						data_storages.Store(item_to_copy.Item2, section.Value);
+					else
+						data_storages.Store(item_to_copy.Item2, section);
 				}
 			}
 			foreach (var test_playlist in m_Playlists)
 			{
 				var res = RunPlaylist(test_playlist, data_storages, _service_provider);
-				if (res != 0)
+				if (res == EPlaylistActionResultInstruction.Fail)
 					return res;
 			}
 
 			m_Logger?.LogInformation($"All tests finished sucessfully");
 
-			return 0;
+			return EPlaylistActionResultInstruction.NoInstruction;
 		}
 
 		/// <summary>Will run the playlist with its prerequisities</summary>
-		protected virtual int								RunPlaylist(TestPlaylist test_playlist, DataStorages _data_storages, IServiceProvider _service_provider)
+		protected virtual EPlaylistActionResultInstruction	RunPlaylist(TestPlaylist test_playlist, DataStorages _data_storages, IServiceProvider _service_provider)
 		{
 			m_Logger?.LogInformation($"Running playlist \"{test_playlist}\"");
 			// run prerequisities

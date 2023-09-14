@@ -19,6 +19,9 @@ namespace Zoka.TestSuite.BasicTestActions
 		private IServiceProvider							ConfiguresServices(IServiceProvider _service_provider)
 		{
 			_service_provider.GetRequiredService<TestPlaylistActionFactory>().RegisterPlaylistAction(TestAction.ACTION_TYPE_NAME, TestAction.ParseFromXmlElement);
+			_service_provider.GetRequiredService<TestPlaylistActionFactory>().RegisterPlaylistAction(FunctionAction.ACTION_TYPE_NAME, FunctionAction.ParseFromXmlElement);
+			_service_provider.GetRequiredService<TestPlaylistActionFactory>().RegisterPlaylistAction(LogAction.ACTION_TYPE_NAME, LogAction.ParseFromXmlElement);
+			_service_provider.GetRequiredService<TestPlaylistActionFactory>().RegisterPlaylistAction(ForAction.ACTION_TYPE_NAME, ForAction.ParseFromXmlElement);
 			return _service_provider;
 		}
 

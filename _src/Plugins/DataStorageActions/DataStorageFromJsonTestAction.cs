@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Xml.Linq;
 using Microsoft.Extensions.DependencyInjection;
@@ -37,7 +38,7 @@ namespace Zoka.TestSuite.DataStorageActions
 		}
 
 		/// <inheritdoc />
-		public int PerformAction(DataStorages _data_storages, IServiceProvider _service_provider)
+		public EPlaylistActionResultInstruction				PerformAction(DataStorages _data_storages, IServiceProvider _service_provider)
 		{
 			var source_val = ZScriptExpressionParser.ParseScriptExpression(m_Source).EvaluateExpressionToValue(_data_storages, _service_provider) as string;
 
@@ -48,7 +49,7 @@ namespace Zoka.TestSuite.DataStorageActions
 
 			_service_provider.GetService<ILogger<DataStorageFromJsonTestAction>>()?.LogDebug($"Stored value ({val}) into {m_Target}");
 
-			return 0;
+			return EPlaylistActionResultInstruction.NoInstruction;
 		}
 
 		/// <summary>Returns the name of the test action</summary>
@@ -60,7 +61,7 @@ namespace Zoka.TestSuite.DataStorageActions
 		#region XML Loading
 
 		/// <summary>Parse the action from the XML Element</summary>
-		public static DataStorageFromJsonTestAction?		ParseFromXmlElement(FileInfo _src_file, XElement _x_element, IServiceProvider _service_provider)
+		public static DataStorageFromJsonTestAction?		ParseFromXmlElement(FileInfo _src_file, XElement _x_element, List<IFunctionAction> _imported_functions, IServiceProvider _service_provider)
 		{
 			if (_x_element.Name != ACTION_TYPE_NAME)
 			{

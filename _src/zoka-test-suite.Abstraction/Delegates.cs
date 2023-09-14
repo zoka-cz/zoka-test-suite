@@ -14,5 +14,5 @@ namespace Zoka.TestSuite.Abstraction
 	public delegate IServiceProvider						ConfigureServicesDelegate(IServiceProvider _service_provider);
 
 	/// <summary>Delegate which loads the IPlaylist action from the Xml element</summary>
-	public delegate IPlaylistAction							CreateFromXmlElementDelegate(FileInfo _src_file, XElement _element, IServiceProvider _service_provider);
+	public delegate IPlaylistAction							CreateFromXmlElementDelegate(FileInfo _src_file, XElement _element, List<IFunctionAction> _imported_functions, IServiceProvider _service_provider);
 }

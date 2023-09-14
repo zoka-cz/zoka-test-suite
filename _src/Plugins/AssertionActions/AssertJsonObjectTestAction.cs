@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Xml;
 using System.Xml.Linq;
@@ -39,7 +40,7 @@ namespace Zoka.TestSuite.AssertionActions
 		}
 
 		/// <inheritdoc />
-		public int PerformAction(DataStorages _data_storages, IServiceProvider _service_provider)
+		public EPlaylistActionResultInstruction				PerformAction(DataStorages _data_storages, IServiceProvider _service_provider)
 		{
 			var json_obj = ZScriptExpressionParser.ParseScriptExpression(m_JsonObjectExpr).EvaluateExpressionToValue(_data_storages, _service_provider) as string;
 
@@ -55,7 +56,7 @@ namespace Zoka.TestSuite.AssertionActions
 
 			obj.Should().ContainSubtree(asserted_obj);
 
-			return 0;
+			return EPlaylistActionResultInstruction.NoInstruction;
 		}
 
 		private string										GetJson(DataStorages _data_storages, IServiceProvider _service_provider)
@@ -93,7 +94,7 @@ namespace Zoka.TestSuite.AssertionActions
 		#region XML Loading
 
 		/// <summary>Loads the assert regex match action from XML Element</summary>
-		public static AssertJsonObjectTestAction?			ParseFromXmlElement(FileInfo _src_file, XElement _x_element, IServiceProvider _service_provider)
+		public static AssertJsonObjectTestAction?			ParseFromXmlElement(FileInfo _src_file, XElement _x_element, List<IFunctionAction> _imported_functions, IServiceProvider _service_provider)
 		{
 			if (_x_element.Name != ACTION_TYPE_NAME)
 			{

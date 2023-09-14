@@ -18,7 +18,7 @@ namespace Zoka.TestSuite.Abstraction
 		string Description { get; }
 
 		/// <summary>Will perform the playlist action</summary>
-		int PerformAction(DataStorages _data_storages, IServiceProvider _service_provider);
+		EPlaylistActionResultInstruction PerformAction(DataStorages _data_storages, IServiceProvider _service_provider);
 
 	}
 }
