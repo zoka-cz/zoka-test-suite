@@ -7,7 +7,7 @@ using System.Xml.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Zoka.TestSuite.Abstraction.XMLHelpers;
-using Zoka.ZScript;
+using Zoka.TestSuite.Abstraction;
 
 namespace Zoka.TestSuite.Abstraction
 {

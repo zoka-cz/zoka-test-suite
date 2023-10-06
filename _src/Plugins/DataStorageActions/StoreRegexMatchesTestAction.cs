@@ -2,13 +2,14 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using Zoka.TestSuite.Abstraction;
+using Zoka.TestSuite.Abstraction.ScriptHelpes;
 using Zoka.TestSuite.Abstraction.XMLHelpers;
-using Zoka.ZScript;
 
 namespace Zoka.TestSuite.DataStorageActions
 {
@@ -41,18 +42,26 @@ namespace Zoka.TestSuite.DataStorageActions
 		/// <inheritdoc />
 		public EPlaylistActionResultInstruction				PerformAction(DataStorages _data_storages, IServiceProvider _service_provider)
 		{
-			
-			return EPlaylistActionResultInstruction.Fail;
-			//var source_val = ZScriptExpressionParser.ParseScriptExpression(m_Source).EvaluateExpressionToValue(_data_storages, _service_provider) as string;
+			var logger = _service_provider.GetService<ILogger<StoreRegexMatchesTestAction>>();
+			var script_helper = new ScriptHelper(_data_storages, _service_provider);
+			var regex_s = script_helper.EvaluateStringReplacements(m_Regex);
+			var regex = new Regex(regex_s);
 
-			//var token = JToken.Parse(source_val ?? throw new InvalidOperationException($"Error getting source value ({m_Source}"));
-			//var val = token.SelectToken(m_JsonPath)?.ToString() ?? throw new Exception($"Could not find any value in json on specified path ({m_JsonPath}");
+			var source_text = _data_storages.GetObjectFromDataStorage(m_Source) as string;
+			if (source_text == null)
+				throw new Exception("No text to match");
 
-			//_data_storages.Store(m_Target, val);
 
-			//_service_provider.GetService<ILogger<DataStorageFromJsonTestAction>>()?.LogDebug($"Stored value ({val}) into {m_Target}");
+			logger?.LogInformation($"Trying if text \"{source_text}\" matches regex \"{regex_s}\"");
+			var match = regex.Match(source_text);
 
-			//return 0;
+			foreach (var target in m_Targets)
+			{
+				_data_storages.Store(target.Value, match.Groups[target.Key + 1].Value);
+				logger?.LogInformation($"Storing match #{target.Key + 1} (\"{match.Groups[target.Key + 1].Value}\") into {target.Value}");
+			}
+
+			return EPlaylistActionResultInstruction.NoInstruction;
 		}
 
 		/// <summary>Returns the name of the test action</summary>

@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Net.Http;
 using System.Text;
-using Zoka.ZScript;
+using Zoka.TestSuite.Abstraction;
 
 namespace Zoka.TestSuite.HttpTestActions.AuthConfiguration
 {

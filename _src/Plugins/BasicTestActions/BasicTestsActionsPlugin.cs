@@ -22,6 +22,9 @@ namespace Zoka.TestSuite.BasicTestActions
 			_service_provider.GetRequiredService<TestPlaylistActionFactory>().RegisterPlaylistAction(FunctionAction.ACTION_TYPE_NAME, FunctionAction.ParseFromXmlElement);
 			_service_provider.GetRequiredService<TestPlaylistActionFactory>().RegisterPlaylistAction(LogAction.ACTION_TYPE_NAME, LogAction.ParseFromXmlElement);
 			_service_provider.GetRequiredService<TestPlaylistActionFactory>().RegisterPlaylistAction(ForAction.ACTION_TYPE_NAME, ForAction.ParseFromXmlElement);
+			_service_provider.GetRequiredService<TestPlaylistActionFactory>().RegisterPlaylistAction(ForEachAction.ACTION_TYPE_NAME, ForEachAction.ParseFromXmlElement);
+			_service_provider.GetRequiredService<TestPlaylistActionFactory>().RegisterPlaylistAction(IfAction.ACTION_TYPE_NAME, IfAction.ParseFromXmlElement);
+			_service_provider.GetRequiredService<TestPlaylistActionFactory>().RegisterPlaylistAction(BreakAction.ACTION_TYPE_NAME, BreakAction.ParseFromXmlElement);
 			return _service_provider;
 		}
 

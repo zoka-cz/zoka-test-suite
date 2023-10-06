@@ -8,13 +8,16 @@ using System.Net.Http.Headers;
 using System.Reflection;
 using System.Text;
 using System.Xml.Linq;
+using Jint;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using Stubble.Core.Builders;
 using Zoka.TestSuite.Abstraction;
+using Zoka.TestSuite.Abstraction.ScriptHelpes;
 using Zoka.TestSuite.Abstraction.XMLHelpers;
 using Zoka.TestSuite.HttpTestActions.AuthConfiguration;
-using Zoka.ZScript;
 
 namespace Zoka.TestSuite.HttpTestActions
 {
@@ -39,8 +42,10 @@ namespace Zoka.TestSuite.HttpTestActions
 		public string?										Auth { get; private set; }
 		/// <summary>The content</summary>
 		public string?										Content { get; private set; }
-		/// <summary>Content into</summary>
-		public string?										ContentInto { get; private set;}
+		/// <summary>Result into</summary>
+		public string?										ResultInto { get; private set;}
+		/// <summary>Store result as (string or JObject)</summary>
+		public string?										ResultAs { get; private set; }
 		/// <summary>Http method</summary>
 		public HttpMethod									Method { get; private set; } = HttpMethod.Get;
 
@@ -55,15 +60,17 @@ namespace Zoka.TestSuite.HttpTestActions
 		public EPlaylistActionResultInstruction				PerformAction(DataStorages _data_storages, IServiceProvider _service_provider)
 		{
 			var logger = _service_provider.GetService<ILogger<HttpRequestTestAction>>();
+			var script_helper = new ScriptHelper(_data_storages, _service_provider);
 
 			HttpClient client = new HttpClient();
 			if (ServerBaseUrl != null)
 			{
-				var server_base_url = ZScriptExpressionParser.ParseScriptExpression(ServerBaseUrl).EvaluateExpressionToValue(_data_storages, _service_provider) as string;
+				var eng = new Engine();
+				var server_base_url = script_helper.EvaluateStringReplacements(ServerBaseUrl);
 				client.BaseAddress = new Uri(server_base_url ?? throw new InvalidOperationException($"Could not evaluate server parameter ({ServerBaseUrl})"));
 			}
 
-			var url = ZScriptExpressionParser.EvaluateScriptReplacements(Url, _data_storages, _service_provider);
+			var url = script_helper.EvaluateStringReplacements(Url);
 			HttpRequestMessage request = new HttpRequestMessage(Method, url);
 			logger?.LogInformation($"Sending request: {Method.ToString().ToUpper()} {url}");
 
@@ -81,7 +88,7 @@ namespace Zoka.TestSuite.HttpTestActions
 
 			if (Content != null)
 			{
-				var content = ZScriptExpressionParser.EvaluateScriptReplacements(Content, _data_storages, _service_provider);
+				var content = script_helper.EvaluateStringReplacements(Content);
 				request.Content = new StringContent(content, Encoding.UTF8, "application/json");
 				logger?.LogInformation($"Message content: {content}");
 			}
@@ -97,8 +104,20 @@ namespace Zoka.TestSuite.HttpTestActions
 				throw new Exception($"Request to {request.RequestUri} has failed with HttpStatusCode: {resp.StatusCode:D} {resp.StatusCode:G}");
 			}
 
-			if (ContentInto != null)
-				_data_storages.Store(ContentInto, resp_content);
+			if (ResultInto != null)
+			{
+				if (ResultAs == null || ResultAs == "string")
+					_data_storages.Store(ResultInto, resp_content);
+				else if (ResultAs == "JObject")
+				{
+					var jobj = JsonConvert.DeserializeObject(resp_content);
+					if (jobj == null)
+						throw new Exception($"Error storing result as JObject, could not been converted");
+					_data_storages.Store(ResultInto, jobj);
+				}
+				else
+					throw new Exception("ResultAs can be only \"string\" or \"JObject\"");
+			}
 
 			return EPlaylistActionResultInstruction.NoInstruction;
 		}
@@ -148,7 +167,8 @@ namespace Zoka.TestSuite.HttpTestActions
 			var http_req = new HttpRequestTestAction(name, url)
 			{
 				ServerBaseUrl = _x_element.ReadAttr<string?>("server", _src_file, false),
-				ContentInto = _x_element.ReadAttr<string?>("content_into", _src_file, false),
+				ResultInto = _x_element.ReadAttr<string?>("result_into", _src_file, false),
+				ResultAs = _x_element.ReadAttr<string?>("result_as", _src_file, false),
 				Auth = _x_element.ReadAttr<string?>("auth", _src_file, false),
 				Method = new HttpMethod(_x_element.ReadAttr<string?>("method", _src_file, false) ?? "GET")
 			};

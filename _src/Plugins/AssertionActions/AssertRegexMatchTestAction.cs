@@ -4,8 +4,8 @@ using System.IO;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Zoka.TestSuite.Abstraction;
+using Zoka.TestSuite.Abstraction.ScriptHelpes;
 using Zoka.TestSuite.Abstraction.XMLHelpers;
-using Zoka.ZScript;
 
 namespace Zoka.TestSuite.AssertionActions
 {
@@ -35,16 +35,13 @@ namespace Zoka.TestSuite.AssertionActions
 		/// <inheritdoc />
 		public EPlaylistActionResultInstruction				PerformAction(DataStorages _data_storages, IServiceProvider _service_provider)
 		{
-
-			int pos = 0;
-			var to_check_expr = ZScriptExpressionParser.ParseScriptExpression(m_ToCheckExpr, ref pos);
-
-			var to_check_val = to_check_expr.EvaluateExpressionToValue(_data_storages, _service_provider) as string;
+			var script_helper = new ScriptHelper(_data_storages, _service_provider);
+			var to_check_expr = script_helper.EvaluateStringReplacements(m_ToCheckExpr);
 
 			var regex = new Regex(m_AssertedRegex);
 
-			if (!regex.IsMatch(to_check_val ?? throw new InvalidOperationException($"Could not evaluate to_check attribute (value={to_check_expr.OriginalExpression})")))
-				throw new Exception($"The value {to_check_val} does not match the regex pattern {m_AssertedRegex}");
+			if (!regex.IsMatch(to_check_expr ?? throw new InvalidOperationException($"Could not evaluate to_check attribute (value={m_ToCheckExpr})")))
+				throw new Exception($"The value {to_check_expr} does not match the regex pattern {m_AssertedRegex}");
 
 			return EPlaylistActionResultInstruction.NoInstruction;
 		}

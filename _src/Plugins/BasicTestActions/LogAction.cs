@@ -7,7 +7,6 @@ using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
 using Zoka.TestSuite.Abstraction;
 using Zoka.TestSuite.Abstraction.XMLHelpers;
-using Zoka.ZScript;
 
 namespace Zoka.TestSuite.BasicTestActions
 {
@@ -30,13 +29,15 @@ namespace Zoka.TestSuite.BasicTestActions
 		/// <inheritdoc />
 		public EPlaylistActionResultInstruction				PerformAction(DataStorages _data_storages, IServiceProvider _service_provider)
 		{
-			var result = ZScriptExpressionParser.EvaluateScriptReplacements(LogExpression, _data_storages, _service_provider);
+			throw new NotImplementedException();
 
-			Console.WriteLine(result);
-			var logger = _service_provider.GetService<ILogger<LogAction>>();
-			logger?.LogInformation(result);
+			//var result = ZScriptExpressionParser.EvaluateScriptReplacements(LogExpression, _data_storages, _service_provider);
 
-			return EPlaylistActionResultInstruction.NoInstruction;
+			//Console.WriteLine(result);
+			//var logger = _service_provider.GetService<ILogger<LogAction>>();
+			//logger?.LogInformation(result);
+
+			//return EPlaylistActionResultInstruction.NoInstruction;
 		}
 
 		/// <summary>To string</summary>

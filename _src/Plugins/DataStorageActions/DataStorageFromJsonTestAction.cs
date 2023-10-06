@@ -6,8 +6,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json.Linq;
 using Zoka.TestSuite.Abstraction;
+using Zoka.TestSuite.Abstraction.ScriptHelpes;
 using Zoka.TestSuite.Abstraction.XMLHelpers;
-using Zoka.ZScript;
 
 namespace Zoka.TestSuite.DataStorageActions
 {
@@ -40,7 +40,7 @@ namespace Zoka.TestSuite.DataStorageActions
 		/// <inheritdoc />
 		public EPlaylistActionResultInstruction				PerformAction(DataStorages _data_storages, IServiceProvider _service_provider)
 		{
-			var source_val = ZScriptExpressionParser.ParseScriptExpression(m_Source).EvaluateExpressionToValue(_data_storages, _service_provider) as string;
+			var source_val = _data_storages.GetObjectFromDataStorage(m_Source) as string;
 
 			var token = JToken.Parse(source_val ?? throw new InvalidOperationException($"Error getting source value ({m_Source}"));
 			var val = token.SelectToken(m_JsonPath)?.ToString() ?? throw new Exception($"Could not find any value in json on specified path ({m_JsonPath}");

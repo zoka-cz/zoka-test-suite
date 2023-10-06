@@ -68,8 +68,6 @@ namespace Zoka.TestSuite
 			_services.AddTransient<TestPlaylist>();
 			_services.AddSingleton<TestPlaylistActionFactory>();
 
-			_services.CollectZTSServices();
-
 			// plugins
 			foreach (var plugin in _plugins)
 			{
@@ -82,8 +80,6 @@ namespace Zoka.TestSuite
 
 		private static void									ConfigureServices(IServiceProvider _service_provider, IEnumerable<IZokaTestSuitePlugin> _plugins)
 		{
-			_service_provider.ConfigureZTSServices();
-
 			foreach (var plugin in _plugins)
 			{
 				foreach (var configure_services_delegate in plugin.ConfigureServicesCallback)

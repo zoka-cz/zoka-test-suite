@@ -7,8 +7,8 @@ using System.Xml.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Zoka.TestSuite.Abstraction;
+using Zoka.TestSuite.Abstraction.ScriptHelpes;
 using Zoka.TestSuite.Abstraction.XMLHelpers;
-using Zoka.ZScript;
 
 namespace Zoka.TestSuite.BasicTestActions
 {
@@ -57,9 +57,12 @@ namespace Zoka.TestSuite.BasicTestActions
 		/// <inheritdoc />
 		public EPlaylistActionResultInstruction				PerformAction(DataStorages _data_storages, IServiceProvider _service_provider)
 		{
-			ResolveParameters(_data_storages, _service_provider);
+			var script_helper = new ScriptHelper(_data_storages, _service_provider);
 
 			_data_storages.Push(new DataStorage());
+
+			ResolveParameters(script_helper, _data_storages, _service_provider);
+
 			var logger = _service_provider.GetService<ILogger<TestAction>>();
 			foreach (var action in m_Actions)
 			{
@@ -101,19 +104,27 @@ namespace Zoka.TestSuite.BasicTestActions
 
 		#region Helpers
 
-		private void										ResolveParameters(DataStorages _data_storages, IServiceProvider _service_provider)
+		private void										ResolveParameters(ScriptHelper _script_helper, DataStorages _data_storages, IServiceProvider _service_provider)
 		{
 			foreach (var parameter in m_Parameters)
 			{
-				if (parameter.IsOutput)
-					continue;
-				var param_val_obj = ZScriptExpressionParser.ParseScriptExpression(parameter.PassedParameterExpression).EvaluateExpressionToValue(_data_storages, _service_provider);
-				if (param_val_obj == null)
+				var param_val_str = _script_helper.EvaluateStringReplacements(parameter.PassedParameterExpression);
+				if (param_val_str == null)
 					throw new Exception($"Couldn't evaluate passed parameter {parameter.Name} expression {parameter.PassedParameterExpression} into value");
-				//var tc = TypeDescriptor.GetConverter(parameter.ParameterType);
-				//var param_val = tc.ConvertFrom(param_val_obj);
-				if (param_val_obj.GetType() != parameter.ParameterType)
-					throw new Exception($"Couldn't convert passed parameter {parameter.Name} expression {parameter.PassedParameterExpression} into value of type {parameter.ParameterType}");
+				object? param_val_obj = param_val_str;
+				if (param_val_str.GetType() != parameter.ParameterType)
+				{
+					var tc = TypeDescriptor.GetConverter(parameter.ParameterType);
+					var param_val = tc.ConvertFrom(param_val_str);
+					if (param_val == null || param_val.GetType() != parameter.ParameterType)
+						throw new Exception($"Couldn't convert passed parameter {parameter.Name} expression {parameter.PassedParameterExpression} into value of type {parameter.ParameterType}");
+					param_val_obj = param_val;
+				}
+				if (parameter.IsOutput)
+				{
+					_data_storages.Store(param_val_str, null);
+					m_Exports.Add(param_val_str);
+				}
 
 				_data_storages.Store($"{(parameter.Name.StartsWith('$') ? "" : "$")}{parameter.Name}", param_val_obj);
 			}

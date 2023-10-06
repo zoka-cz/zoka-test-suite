@@ -5,16 +5,16 @@ using System.Xml.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Zoka.TestSuite.Abstraction;
+using Zoka.TestSuite.Abstraction.ScriptHelpes;
 using Zoka.TestSuite.Abstraction.XMLHelpers;
-using Zoka.ZScript;
 
 namespace Zoka.TestSuite.DataStorageActions
 {
 	/// <summary>Test action, which parses source ZScript expression and stores it into target variable in data storage</summary>
-	public class DataStorageFromZScriptTestAction : IPlaylistAction
+	public class DataStorageTestAction : IPlaylistAction
 	{
 		/// <summary>Action type name</summary>
-		public const string									ACTION_TYPE_NAME = "DataStorageFromZScript";
+		public const string									ACTION_TYPE_NAME = "DataStorage";
 
 		/// <summary>Name of the action</summary>
 		public string?										Name { get; private set; }
@@ -28,7 +28,7 @@ namespace Zoka.TestSuite.DataStorageActions
 		private string										m_Source;
 
 		/// <summary>Constructor</summary>
-		protected DataStorageFromZScriptTestAction(string _source_expr, string _target)
+		protected DataStorageTestAction(string _source_expr, string _target)
 		{
 			m_Source = _source_expr;
 			m_Target = _target;
@@ -37,10 +37,12 @@ namespace Zoka.TestSuite.DataStorageActions
 		/// <inheritdoc />
 		public EPlaylistActionResultInstruction				PerformAction(DataStorages _data_storages, IServiceProvider _service_provider)
 		{
-			var source_val = ZScriptExpressionParser.ParseScriptExpression(m_Source).EvaluateExpressionToValue(_data_storages, _service_provider);
+			var script_helper = new ScriptHelper(_data_storages, _service_provider);
+
+			var source_val = script_helper.EvaluateStringReplacements(m_Source);
 			_data_storages.Store(m_Target, source_val);
 
-			_service_provider.GetService<ILogger<DataStorageFromZScriptTestAction>>()?.LogDebug($"Stored value ({source_val}) into {m_Target}");
+			_service_provider.GetService<ILogger<DataStorageTestAction>>()?.LogDebug($"Stored value ({source_val}) into {m_Target}");
 
 			return EPlaylistActionResultInstruction.NoInstruction;
 		}
@@ -55,14 +57,14 @@ namespace Zoka.TestSuite.DataStorageActions
 
 
 		/// <summary>Parse the action from the XML Element</summary>
-		public static DataStorageFromZScriptTestAction?		ParseFromXmlElement(FileInfo _src_file, XElement _x_element, List<IFunctionAction> _imported_functions, IServiceProvider _service_provider)
+		public static DataStorageTestAction?				ParseFromXmlElement(FileInfo _src_file, XElement _x_element, List<IFunctionAction> _imported_functions, IServiceProvider _service_provider)
 		{
 			if (_x_element.Name != ACTION_TYPE_NAME)
 			{
 				throw new ZTSXmlException($"Expected {ACTION_TYPE_NAME} element name, but got {_x_element.Name}");
 			}
 
-			var action = new DataStorageFromZScriptTestAction(
+			var action = new DataStorageTestAction(
 				_source_expr: _x_element.ReadAttr<string>("source", _src_file, true),
 				_target: _x_element.ReadAttr<string>("target", _src_file, true)
 				)

@@ -9,8 +9,8 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Zoka.TestSuite.Abstraction;
+using Zoka.TestSuite.Abstraction.ScriptHelpes;
 using Zoka.TestSuite.Abstraction.XMLHelpers;
-using Zoka.ZScript;
 
 namespace Zoka.TestSuite.AssertionActions
 {
@@ -42,9 +42,11 @@ namespace Zoka.TestSuite.AssertionActions
 		/// <inheritdoc />
 		public EPlaylistActionResultInstruction				PerformAction(DataStorages _data_storages, IServiceProvider _service_provider)
 		{
-			var json_obj = ZScriptExpressionParser.ParseScriptExpression(m_JsonObjectExpr).EvaluateExpressionToValue(_data_storages, _service_provider) as string;
+			var script_helper = new ScriptHelper(_data_storages, _service_provider);
 
-			var asserted_json = GetJson(_data_storages, _service_provider);
+			var json_obj = _data_storages.GetObjectFromDataStorage(m_JsonObjectExpr) as string;
+
+			var asserted_json = GetJson(script_helper);
 
 			var asserted_reader = new JsonTextReader(new StringReader(asserted_json));
 			var asserted_obj = JToken.Load(asserted_reader);
@@ -59,12 +61,12 @@ namespace Zoka.TestSuite.AssertionActions
 			return EPlaylistActionResultInstruction.NoInstruction;
 		}
 
-		private string										GetJson(DataStorages _data_storages, IServiceProvider _service_provider)
+		private string										GetJson(ScriptHelper _script_helper)
 		{
 			string? json = null;
 			if (!string.IsNullOrWhiteSpace(m_AssertedJsonFile))
 			{
-				var json_filename = ZScriptExpressionParser.EvaluateScriptReplacements(m_AssertedJsonFile, _data_storages, _service_provider);
+				var json_filename = _script_helper.EvaluateStringReplacements(m_AssertedJsonFile);
 				var fi = new FileInfo(json_filename);
 				if (fi.Exists)
 				{
@@ -78,7 +80,7 @@ namespace Zoka.TestSuite.AssertionActions
 
 			if (json != null)
 			{
-				json = ZScriptExpressionParser.EvaluateScriptReplacements(json, _data_storages, _service_provider);
+				json = _script_helper.EvaluateStringReplacements(json);
 			}
 			if (json == null)
 				throw new Exception("No asserted json is present.");

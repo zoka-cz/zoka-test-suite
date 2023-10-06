@@ -5,7 +5,8 @@ using System.Net.Http.Headers;
 using System.Text;
 using System.Threading.Tasks;
 using Newtonsoft.Json.Linq;
-using Zoka.ZScript;
+using Zoka.TestSuite.Abstraction;
+using Zoka.TestSuite.Abstraction.ScriptHelpes;
 
 namespace Zoka.TestSuite.HttpTestActions.AuthConfiguration
 {
@@ -34,7 +35,7 @@ namespace Zoka.TestSuite.HttpTestActions.AuthConfiguration
 		{
 			if (Token == null || TokenValidation < DateTime.UtcNow)
 			{
-				Login();
+				Login(_data_storages, _service_provider);
 			}
 
 			if (Token != null && TokenValidation > DateTime.UtcNow)
@@ -44,15 +45,17 @@ namespace Zoka.TestSuite.HttpTestActions.AuthConfiguration
 
 		}
 
-		private void										Login()
+		private void										Login(DataStorages _data_storages, IServiceProvider _service_provider)
 		{
-			var login_url = new Uri(LoginURL);
+			var script_helper = new ScriptHelper(_data_storages, _service_provider);
+
+			var login_url = new Uri(script_helper.EvaluateStringReplacements(LoginURL));
 			var http_client = new HttpClient();
 			http_client.BaseAddress = login_url;
 			var msg = new HttpRequestMessage
 			{
 				Method = new HttpMethod(LoginMethod),
-				Content = new StringContent(LoginBody, Encoding.UTF8, "application/json"),
+				Content = new StringContent(script_helper.EvaluateStringReplacements(LoginBody), Encoding.UTF8, "application/json"),
 				RequestUri = login_url
 			};
 

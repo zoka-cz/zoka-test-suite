@@ -5,16 +5,17 @@ using System.Collections.Generic;
 using System.IO;
 using System.Text;
 using System.Xml.Linq;
+using Jint;
 using Zoka.TestSuite.Abstraction;
 using Zoka.TestSuite.Abstraction.ScriptHelpes;
 using Zoka.TestSuite.Abstraction.XMLHelpers;
 
 namespace Zoka.TestSuite.BasicTestActions
 {
-	internal class ForAction : IPlaylistAction
+	internal class IfAction : IPlaylistAction
 	{
 		/// <summary>XML element name</summary>
-		public const string									ACTION_TYPE_NAME = "For";
+		public const string									ACTION_TYPE_NAME = "If";
 
 		/// <summary>Name of the action</summary>
 		public string										Name { get; }
@@ -23,22 +24,17 @@ namespace Zoka.TestSuite.BasicTestActions
 		/// <summary>Description of the action</summary>
 		public string										Description { get; }
 
-		private string										m_IndexerExpr;
-		private string										m_StartValueExpr;
 		private string										m_ConditionExpr;
-		private string										m_ActionExpr;
-		private readonly List<IPlaylistAction>				m_SubActions;
+
+		private List<IPlaylistAction>						m_SubActions;
 
 		/// <summary>Constructor</summary>
-		private ForAction(string _name, string _id, string _description, string _indexer_expr, string _start_value_expr, string _condition_expr, string _action_expr, List<IPlaylistAction> _sub_actions)
+		private IfAction(string _name, string _id, string _description, string _condition_expr, List<IPlaylistAction> _sub_actions)
 		{
 			Name = _name;
 			Id = _id;
 			Description = _description;
-			m_IndexerExpr = _indexer_expr;
-			m_StartValueExpr = _start_value_expr;
 			m_ConditionExpr = _condition_expr;
-			m_ActionExpr = _action_expr;
 			m_SubActions = _sub_actions;
 		}
 
@@ -46,11 +42,16 @@ namespace Zoka.TestSuite.BasicTestActions
 		public EPlaylistActionResultInstruction PerformAction(DataStorages _data_storages, IServiceProvider _service_provider)
 		{
 			var script_helper = new ScriptHelper(_data_storages, _service_provider);
+			var logger = _service_provider.GetRequiredService<ILogger<IfAction>>();
 
-			var start_val = int.Parse(script_helper.RunJsExpressionIntoString(m_StartValueExpr));
-			_data_storages.Store(m_IndexerExpr, start_val);
+			var condition_res = script_helper.RunJsExpression(m_ConditionExpr);
+			if (!condition_res.IsBoolean())
+				throw new Exception("Condition in JS has not evaluated into boolean.");
 
-			while (bool.Parse(script_helper.RunJsExpressionIntoString(m_ConditionExpr)))
+			var res = condition_res.AsBoolean();
+			logger.LogInformation($"Condition expression (\"{m_ConditionExpr}\") evaluated as {res}");
+
+			if (res)
 			{
 				var should_break = false;
 				foreach (var action in m_SubActions)
@@ -66,10 +67,7 @@ namespace Zoka.TestSuite.BasicTestActions
 				}
 
 				if (should_break)
-					break;
-
-				var expr_res = int.Parse(script_helper.RunJsExpressionIntoString(m_ActionExpr));
-				_data_storages.Store(m_IndexerExpr, expr_res);
+					return EPlaylistActionResultInstruction.BreakLoop;
 			}
 
 			return EPlaylistActionResultInstruction.NoInstruction;
@@ -84,16 +82,13 @@ namespace Zoka.TestSuite.BasicTestActions
 		#region XML Loading
 
 		/// <summary>Parse Action from XmlElement</summary>
-		public static ForAction								ParseFromXmlElement(FileInfo _src_file, XElement _x_element, List<IFunctionAction> _imported_functions, IServiceProvider _service_provider)
+		public static IfAction								ParseFromXmlElement(FileInfo _src_file, XElement _x_element, List<IFunctionAction> _imported_functions, IServiceProvider _service_provider)
 		{
 			var name = _x_element.ReadNameAttr(_src_file, false);
 			var desc = _x_element.ReadDescAttr(_src_file, false);
 			var id = _x_element.ReadIdAttr(_src_file, false);
 
-			var indexer_expr = _x_element.ReadAttr<string>("indexer", _src_file, true);
-			var start_val_expr = _x_element.ReadAttr<string>("start", _src_file, true);
 			var condition_expr = _x_element.ReadAttr<string>("condition", _src_file, true);
-			var action_expr = _x_element.ReadAttr<string>("indexer_action", _src_file, true);
 
 			var sub_actions = new List<IPlaylistAction>();
 			var test_action_factory = _service_provider.GetRequiredService<TestPlaylistActionFactory>();
@@ -109,7 +104,7 @@ namespace Zoka.TestSuite.BasicTestActions
 				}
 			}
 
-			var func = new ForAction(name, id, desc, indexer_expr, start_val_expr, condition_expr, action_expr, sub_actions);
+			var func = new IfAction(name, id, desc, condition_expr, sub_actions);
 			return func;
 		}
 
