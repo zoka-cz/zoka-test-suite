@@ -7,7 +7,7 @@ using System.Xml.Linq;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Zoka.TestSuite.Abstraction.XMLHelpers;
-using Zoka.ZScript;
+using Zoka.TestSuite.Abstraction;
 
 namespace Zoka.TestSuite.Abstraction
 {
@@ -37,6 +37,9 @@ namespace Zoka.TestSuite.Abstraction
 		/// <summary>Returns the names of the playlist required to be run before this playlist can be run</summary>
 		public List<string>									RunAfterPlaylists { get; } = new List<string>();
 
+		/// <summary>List of imported functions to be used in playlist action</summary>
+		public List<IFunctionAction>						ImportedFunctions { get; } = new List<IFunctionAction>();
+
 		#endregion // Public data members
 
 		#region Construction
@@ -52,16 +55,16 @@ namespace Zoka.TestSuite.Abstraction
 		#region Running
 
 		/// <summary>Will run the playlist action</summary>
-		public int											Run(DataStorages _data_storages, IServiceProvider _service_provider)
+		public EPlaylistActionResultInstruction				Run(DataStorages _data_storages, IServiceProvider _service_provider)
 		{
 			foreach (var playlist_action in PlaylistActions)
 			{
 				var res = playlist_action.PerformAction(_data_storages, _service_provider);
-				if (res != 0)
+				if (res == EPlaylistActionResultInstruction.Fail)
 					return res;
 			}
 
-			return 0;
+			return EPlaylistActionResultInstruction.NoInstruction;
 		}
 
 		#endregion // Running
@@ -133,10 +136,30 @@ namespace Zoka.TestSuite.Abstraction
 				}
 			}
 
+			// import some functions?
 			var action_factory = _service_provider.GetRequiredService<TestPlaylistActionFactory>();
+			var import_functions_el = _element.Element("ImportFunctions");
+			if (import_functions_el != null)
+			{
+				foreach (var x_el_function_import in import_functions_el.Elements("Item"))
+				{
+					included_path = x_el_function_import.ReadAttr<string>("_include", _src_xml, true);
+					var included_file = new FileInfo(Path.Combine(_src_xml.DirectoryName, included_path));
+					if (!included_file.Exists)
+						throw new ZTSXmlException($"Imported function file ({included_file}) was not found.", included_file.Name, _element.GetLineNumber(), _element.GetLinePosition());
+
+					if (action_factory.LoadFromXmlFile(included_file, playlist.ImportedFunctions, _service_provider) is IFunctionAction imported_function)
+						playlist.ImportedFunctions.Add(imported_function);
+					else
+						throw new ZTSXmlException($"Imported function file ({included_file}) contained function not inhertied from IFunctionAction", included_file.Name, _element.GetLineNumber(), _element.GetLinePosition());
+				}
+			}
+
 			foreach (var x_element in _element.Elements())
 			{
-				var action = action_factory.LoadFromXmlElement(_src_xml, x_element, _service_provider);
+				if (x_element.Name == "ImportFunctions")
+					continue;
+				var action = action_factory.LoadFromXmlElement(_src_xml, x_element, playlist.ImportedFunctions, _service_provider);
 				playlist.PlaylistActions.Add(action);
 			}
 

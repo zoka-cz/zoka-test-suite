@@ -18,7 +18,7 @@ namespace Zoka.TestSuite
 			return root_command.InvokeAsync(args).Result;
 		}
 
-		private static Task<int>							RunSuite(FileInfo _suite_file, FileInfo? _config_file, FileInfo _log4net_config_file, DirectoryInfo[]? _plugin_directory)
+		private static Task<EPlaylistActionResultInstruction> RunSuite(FileInfo _suite_file, FileInfo? _config_file, FileInfo _log4net_config_file, DirectoryInfo[]? _plugin_directory)
 		{
 			var service_provider = ConfigureServiceProvider(_config_file, _log4net_config_file, _plugin_directory);
 			var test_suite = Abstraction.TestSuite.FromXml(_suite_file, service_provider);
@@ -26,10 +26,10 @@ namespace Zoka.TestSuite
 			return Task<int>.FromResult(res);
 		}
 
-		private static Task<int>							RunPlaylist(FileInfo _playlist_file, FileInfo? _config_file, FileInfo _log4net_config_file, DirectoryInfo[]? _plugin_directory)
+		private static Task<EPlaylistActionResultInstruction> RunPlaylist(FileInfo _playlist_file, FileInfo? _config_file, FileInfo _log4net_config_file, DirectoryInfo[]? _plugin_directory)
 		{
 			ConfigureServiceProvider(_config_file, _log4net_config_file, _plugin_directory);
-			return Task<int>.FromResult(0);
+			return Task<EPlaylistActionResultInstruction>.FromResult(EPlaylistActionResultInstruction.Fail);
 		}
 
 

@@ -1,14 +1,23 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Reflection;
 using System.Text;
 using System.Xml.Linq;
+using Jint;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Newtonsoft.Json;
+using Stubble.Core.Builders;
 using Zoka.TestSuite.Abstraction;
+using Zoka.TestSuite.Abstraction.ScriptHelpes;
 using Zoka.TestSuite.Abstraction.XMLHelpers;
-using Zoka.ZScript;
+using Zoka.TestSuite.HttpTestActions.AuthConfiguration;
 
 namespace Zoka.TestSuite.HttpTestActions
 {
@@ -29,12 +38,14 @@ namespace Zoka.TestSuite.HttpTestActions
 		public string?										ServerBaseUrl { get; private set; }
 		/// <summary>Relative Url to call on server</summary>
 		public string										Url { get; private set; }
-		/// <summary>If set, it uses this basic auth param</summary>
-		public string?										BasicAuth { get; private set; }
+		/// <summary>If set, it uses auth param from storage to configure authentication</summary>
+		public string?										Auth { get; private set; }
 		/// <summary>The content</summary>
 		public string?										Content { get; private set; }
-		/// <summary>Content into</summary>
-		public string?										ContentInto { get; private set;}
+		/// <summary>Result into</summary>
+		public string?										ResultInto { get; private set;}
+		/// <summary>Store result as (string or JObject)</summary>
+		public string?										ResultAs { get; private set; }
 		/// <summary>Http method</summary>
 		public HttpMethod									Method { get; private set; } = HttpMethod.Get;
 
@@ -46,32 +57,38 @@ namespace Zoka.TestSuite.HttpTestActions
 		}
 
 		/// <summary>Will perform action</summary>
-		public int											PerformAction(DataStorages _data_storages, IServiceProvider _service_provider)
+		public EPlaylistActionResultInstruction				PerformAction(DataStorages _data_storages, IServiceProvider _service_provider)
 		{
 			var logger = _service_provider.GetService<ILogger<HttpRequestTestAction>>();
+			var script_helper = new ScriptHelper(_data_storages, _service_provider);
 
 			HttpClient client = new HttpClient();
 			if (ServerBaseUrl != null)
 			{
-				var server_base_url = ZScriptExpressionParser.ParseScriptExpression(ServerBaseUrl).EvaluateExpressionToValue(_data_storages, _service_provider) as string;
+				var eng = new Engine();
+				var server_base_url = script_helper.EvaluateStringReplacements(ServerBaseUrl);
 				client.BaseAddress = new Uri(server_base_url ?? throw new InvalidOperationException($"Could not evaluate server parameter ({ServerBaseUrl})"));
 			}
 
-			var url = ZScriptExpressionParser.EvaluateScriptReplacements(Url, _data_storages, _service_provider);
+			var url = script_helper.EvaluateStringReplacements(Url);
 			HttpRequestMessage request = new HttpRequestMessage(Method, url);
 			logger?.LogInformation($"Sending request: {Method.ToString().ToUpper()} {url}");
 
-			if (BasicAuth != null)
+			if (Auth != null)
 			{
-				var basic_auth = ZScriptExpressionParser.ParseScriptExpression(BasicAuth).EvaluateExpressionToValue(_data_storages, _service_provider) as string;
-				var auth_bytes = Encoding.UTF8.GetBytes(basic_auth);
-				client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(auth_bytes));
-				logger?.LogInformation($"Authorizing as Basic {basic_auth}");
+				ResolveAuth(client, _data_storages, _service_provider);
 			}
+			//if (BasicAuth != null)
+			//{
+			//	var basic_auth = ZScriptExpressionParser.ParseScriptExpression(BasicAuth).EvaluateExpressionToValue(_data_storages, _service_provider) as string;
+			//	var auth_bytes = Encoding.UTF8.GetBytes(basic_auth);
+			//	client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(auth_bytes));
+			//	logger?.LogInformation($"Authorizing as Basic {basic_auth}");
+			//}
 
 			if (Content != null)
 			{
-				var content = ZScriptExpressionParser.EvaluateScriptReplacements(Content, _data_storages, _service_provider);
+				var content = script_helper.EvaluateStringReplacements(Content);
 				request.Content = new StringContent(content, Encoding.UTF8, "application/json");
 				logger?.LogInformation($"Message content: {content}");
 			}
@@ -87,11 +104,48 @@ namespace Zoka.TestSuite.HttpTestActions
 				throw new Exception($"Request to {request.RequestUri} has failed with HttpStatusCode: {resp.StatusCode:D} {resp.StatusCode:G}");
 			}
 
-			if (ContentInto != null)
-				_data_storages.Store(ContentInto, resp_content);
+			if (ResultInto != null)
+			{
+				if (ResultAs == null || ResultAs == "string")
+					_data_storages.Store(ResultInto, resp_content);
+				else if (ResultAs == "JObject")
+				{
+					var jobj = JsonConvert.DeserializeObject(resp_content);
+					if (jobj == null)
+						throw new Exception($"Error storing result as JObject, could not been converted");
+					_data_storages.Store(ResultInto, jobj);
+				}
+				else
+					throw new Exception("ResultAs can be only \"string\" or \"JObject\"");
+			}
 
-			return 0;
+			return EPlaylistActionResultInstruction.NoInstruction;
 		}
+
+		private void										ResolveAuth(HttpClient _http_client, DataStorages _data_storages, IServiceProvider _service_provider)
+		{
+			if (Auth == null)
+				return;
+			var auth = _data_storages.GetObjectFromDataStorage(Auth);
+
+			// on the first usage it is configuration object (IConfigurationSection), thus we need to parse it first before other using and store it again as actual configuration
+			if (auth is IConfigurationSection auth_section)
+			{
+				if (auth_section.GetSection("Type").Value == "JWT")
+				{
+					var jwt_auth_config = auth_section.Get<JWTAuthConfiguration>();
+					_data_storages.Store(Auth, jwt_auth_config);
+				}
+			}
+
+			var auth_config = _data_storages.GetObjectFromDataStorage(Auth) as IAuthConfiguration;
+			if (auth_config == null)
+				throw new Exception($"{Auth} was not resolved to the IAuthConfiguration type");
+			
+			auth_config.ResolveAuth(_http_client, _data_storages, _service_provider);
+		}
+
+
 
 		/// <summary>To string</summary>
 		public override string								ToString()
@@ -103,7 +157,7 @@ namespace Zoka.TestSuite.HttpTestActions
 		#region XML Loading
 
 		/// <summary>Parse the action from the XML Element</summary>
-		public static HttpRequestTestAction?				ParseFromXmlElement(FileInfo _src_file, XElement _x_element, IServiceProvider _service_provider)
+		public static HttpRequestTestAction?				ParseFromXmlElement(FileInfo _src_file, XElement _x_element, List<IFunctionAction> _imported_functions, IServiceProvider _service_provider)
 		{
 			var name = _x_element.ReadNameAttr(_src_file, false);
 			var desc = _x_element.ReadDescAttr(_src_file, false);
@@ -113,8 +167,9 @@ namespace Zoka.TestSuite.HttpTestActions
 			var http_req = new HttpRequestTestAction(name, url)
 			{
 				ServerBaseUrl = _x_element.ReadAttr<string?>("server", _src_file, false),
-				ContentInto = _x_element.ReadAttr<string?>("content_into", _src_file, false),
-				BasicAuth = _x_element.ReadAttr<string?>("basic_auth", _src_file, false),
+				ResultInto = _x_element.ReadAttr<string?>("result_into", _src_file, false),
+				ResultAs = _x_element.ReadAttr<string?>("result_as", _src_file, false),
+				Auth = _x_element.ReadAttr<string?>("auth", _src_file, false),
 				Method = new HttpMethod(_x_element.ReadAttr<string?>("method", _src_file, false) ?? "GET")
 			};
 

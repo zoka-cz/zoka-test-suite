@@ -6,7 +6,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Zoka.TestSuite.Abstraction;
 using Zoka.TestSuite.Abstraction.XMLHelpers;
-using Zoka.ZScript;
 
 namespace Zoka.TestSuite.BasicTestActions
 {
@@ -36,70 +35,36 @@ namespace Zoka.TestSuite.BasicTestActions
 			Description = _description;
 		}
 
-		private int											Arrange(DataStorages _data_storages, IServiceProvider _service_provider)
+		private EPlaylistActionResultInstruction			PerformTestPhase(List<IPlaylistAction> _actions, string _phase_name, DataStorages _data_storages, IServiceProvider _service_provider)
 		{
-			if (ArrangeActions.Count > 0)
+			if (_actions.Count > 0)
 			{
 				var logger = _service_provider.GetService<ILogger<TestAction>>();
-				logger?.Log(LogLevel.Information, $"Starting Arrange phase of {this}");
-				foreach (var arrange_action in ArrangeActions)
+				logger?.Log(LogLevel.Information, $"Starting {_phase_name} phase of {this}");
+				foreach (var action in _actions)
 				{
-					logger?.Log(LogLevel.Information, $"Running action {arrange_action}");
-					var ret = arrange_action.PerformAction(_data_storages, _service_provider);
-					if (ret != 0)
+					logger?.Log(LogLevel.Information, $"Running action {action}");
+					var ret = action.PerformAction(_data_storages, _service_provider);
+					if (ret == EPlaylistActionResultInstruction.Fail)
 						return ret;
 				}
 			}
 
-			return 0;
-		}
-
-		private int											Act(DataStorages _data_storages, IServiceProvider _service_provider)
-		{
-			if (ActActions.Count > 0)
-			{
-				var logger = _service_provider.GetService<ILogger<TestAction>>();
-				logger?.Log(LogLevel.Information, $"Starting Act phase of {this}");
-				foreach (var act_action in ActActions)
-				{
-					logger?.Log(LogLevel.Information, $"Running action {act_action}");
-					var ret = act_action.PerformAction(_data_storages, _service_provider);
-					if (ret != 0)
-						return ret;
-				}
-			}
-			return 0;
-		}
-
-		private int											Assert(DataStorages _data_storages, IServiceProvider _service_provider)
-		{
-			if (AssertActions.Count > 0)
-			{
-				var logger = _service_provider.GetService<ILogger<TestAction>>();
-				logger?.Log(LogLevel.Information, $"Starting Assert phase of {this}");
-				foreach (var assert_action in AssertActions)
-				{
-					logger?.Log(LogLevel.Information, $"Running action {assert_action}");
-					var ret = assert_action.PerformAction(_data_storages, _service_provider);
-					if (ret != 0)
-						return ret;
-				}
-			}
-			return 0;
+			return EPlaylistActionResultInstruction.NoInstruction;
 		}
 
 		/// <inheritdoc />
-		public int											PerformAction(DataStorages _data_storages, IServiceProvider _service_provider)
+		public EPlaylistActionResultInstruction				PerformAction(DataStorages _data_storages, IServiceProvider _service_provider)
 		{
 			_data_storages.Push(new DataStorage());
-			var ret = Arrange(_data_storages, _service_provider);
-			if (ret != 0)
+			var ret = PerformTestPhase(ArrangeActions, "Arrange", _data_storages, _service_provider);
+			if (ret == EPlaylistActionResultInstruction.Fail)
 				return ret;
-			ret = Act(_data_storages, _service_provider);
-			if (ret != 0)
+			ret = PerformTestPhase(ActActions, "Act", _data_storages, _service_provider);
+			if (ret == EPlaylistActionResultInstruction.Fail)
 				return ret;
-			ret = Assert(_data_storages, _service_provider);
-			if (ret != 0)
+			ret = PerformTestPhase(AssertActions, "Assert", _data_storages, _service_provider);
+			if (ret == EPlaylistActionResultInstruction.Fail)
 				return ret;
 
 			var storage_to_remove = _data_storages.Pop();
@@ -114,7 +79,7 @@ namespace Zoka.TestSuite.BasicTestActions
 				}
 			}
 
-			return 0;
+			return EPlaylistActionResultInstruction.NoInstruction;
 		}
 
 		/// <summary>To string</summary>
@@ -126,7 +91,7 @@ namespace Zoka.TestSuite.BasicTestActions
 		#region XML Loading
 
 		/// <summary>Parse Action from XmlElement</summary>
-		public static TestAction							ParseFromXmlElement(FileInfo _src_file, XElement _x_element, IServiceProvider _service_provider)
+		public static TestAction							ParseFromXmlElement(FileInfo _src_file, XElement _x_element, List<IFunctionAction> _imported_functions, IServiceProvider _service_provider)
 		{
 			var name = _x_element.ReadNameAttr(_src_file, true);
 			var desc = _x_element.ReadDescAttr(_src_file, false);
@@ -136,9 +101,9 @@ namespace Zoka.TestSuite.BasicTestActions
 			var test = new TestAction(id, name, desc);
 
 
-			ParseActions(_x_element.Element("Arrange"), test.ArrangeActions, _service_provider, _src_file);
-			ParseActions(_x_element.Element("Act"), test.ActActions, _service_provider, _src_file);
-			ParseActions(_x_element.Element("Assert"), test.AssertActions, _service_provider, _src_file);
+			ParseActions(_x_element.Element("Arrange"), test.ArrangeActions, _imported_functions, _service_provider, _src_file);
+			ParseActions(_x_element.Element("Act"), test.ActActions, _imported_functions, _service_provider, _src_file);
+			ParseActions(_x_element.Element("Assert"), test.AssertActions, _imported_functions, _service_provider, _src_file);
 
 			var export_el = _x_element.Element("Export");
 			if (export_el != null)
@@ -152,7 +117,7 @@ namespace Zoka.TestSuite.BasicTestActions
 			return test;
 		}
 
-		private static void									ParseActions(XElement? _x_element, List<IPlaylistAction> _actions, IServiceProvider _service_provider, FileInfo _src_file)
+		private static void									ParseActions(XElement? _x_element, List<IPlaylistAction> _actions, List<IFunctionAction> _imported_functions, IServiceProvider _service_provider, FileInfo _src_file)
 		{
 			if (_x_element == null)
 				return;
@@ -160,7 +125,7 @@ namespace Zoka.TestSuite.BasicTestActions
 			var test_action_factory = _service_provider.GetRequiredService<TestPlaylistActionFactory>();
 			foreach (var x_action_element in _x_element.Elements())
 			{
-				var action = test_action_factory.LoadFromXmlElement(_src_file, x_action_element, _service_provider);
+				var action = test_action_factory.LoadFromXmlElement(_src_file, x_action_element, _imported_functions, _service_provider);
 				if (action != null)
 					_actions.Add(action);
 				else

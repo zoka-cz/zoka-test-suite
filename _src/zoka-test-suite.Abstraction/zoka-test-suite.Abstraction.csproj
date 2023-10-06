@@ -16,10 +16,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Jint" Version="3.0.0-preview-487" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="7.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="7.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="7.0.0" />
-    <PackageReference Include="ZScript" Version="0.9.1" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Stubble.Core" Version="1.10.8" />
   </ItemGroup>
 
 </Project>
